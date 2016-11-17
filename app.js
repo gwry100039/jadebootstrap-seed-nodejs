@@ -5,6 +5,10 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+//file upload
+var multer  = require('multer') 
+var upload = multer({ dest: 'uploads/' })
+
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
@@ -24,6 +28,36 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/users', users);
+
+var cpUpload = upload.fields([
+  { name: 'table', maxCount: 1 }, 
+  { name: 'primarykey', maxCount: 1 }, 
+  { name: 'index', maxCount: 1 }
+])
+
+app.post('/templates/upload', cpUpload, function (req, res, next) {
+  // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
+  //
+  // e.g.
+  //  req.files['avatar'][0] -> File
+  //  req.files['gallery'] -> Array
+  //
+  // req.body will contain the text fields, if there were any
+  console.log (req.files);
+
+  //TODO 对excel内容的校验，一部分校验需要连接数据库
+  if(req.files['table']) {
+
+  }
+
+  if(req.files['primarykey']) {
+    
+  }
+
+  if(req.files['index']) {
+    
+  }
+})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -55,6 +89,5 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-
 
 module.exports = app;
