@@ -1,3 +1,5 @@
+以jadebootstrap-seed为基础快速搭建WEB应用
+
 # jadebootstrap-seed
 [JADE-Bootstrap](http://rajasegar.github.io/JADE-Bootstrap/) boilerplate project for [NodeJS](http://nodejs.org/) using [Express](http://expressjs.com) middleware
 
