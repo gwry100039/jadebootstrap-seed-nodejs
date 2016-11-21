@@ -6,3 +6,7 @@ body {
 a {
   color: #00B7FF;
 }
+
+.dropdown {
+  margin-bottom: 13px;
+}

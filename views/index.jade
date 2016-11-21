@@ -1,8 +1,19 @@
 extends ./jade-bootstrap/_bootstrap
-
-
+append styles
+	link(href='/css/style.css', rel='stylesheet')
 append body
 	.container
-		form(enctype="multipart/form-data",action="/templates/upload",method="post")#uploadexcel
-			input(type="file" name="table")
-			input(type="submit" value="提交")
+		+panel-info("新核心元数据提交窗口")
+			+dropdown("下载填报模板",[
+				{text:"表结构",url:"/templates/test.xlsx"},
+			 	{text:"主键",url:"/templates/test.xlsx"},
+			 	{text:"索引",url:"/templates/test.xlsx"}
+			])
+			form(enctype="multipart/form-data",action="/templates/upload",method="post")#uploadexcel
+				+input-group("表结构模板","")
+					input(type="file" name="table").form-control		
+				+input-group("主键模板","")
+					input(type="file" name="primarykey").form-control
+				+input-group("索引模板","")
+					input(type="file" name="index").form-control
+				+submit-info("提交")
