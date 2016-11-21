@@ -1,15 +1,15 @@
 //单条记录校验规则
 var singleTableCheckFun = {
-	NULLCOMMITTER : function (dataObj) {
+	NULL_COMMITTER : function (dataObj) {
 		return dataObj.MODI_USER === undefined;
 	},
-	NULLCG : function (dataObj) {
+	NULL_CG : function (dataObj) {
 		return dataObj.CG_ID === undefined || dataObj.CG_NAME === undefined;
 	},
-	NULLCOLUMNNAME : function (dataObj) {
+	NULL_COLUMNNAME : function (dataObj) {
 		return dataObj.COLUMN_NAME === undefined;
 	},
-	CGNAMENOTMATCH : function (dataObj) {
+	CGNAME_NOTMATCH : function (dataObj) {
 		return 
 		(dataObj.C1_ID != dataObj.CG_ID || dataObj.C1_ID === undefined ) &&
 		(dataObj.C2_ID != dataObj.CG_ID || dataObj.C2_ID === undefined ) &&
@@ -21,27 +21,55 @@ var singleTableCheckFun = {
 }
 //多条记录校验规则
 var multiTableCheckFun = {
-	NULLCOMMITTER : function (dataList) {
-		return dataObj.MODI_USER === undefined;
+	DUPLICATE_COLUMNNAME : function (dataList) {
+		var tableMap = {};
+		var errorData = [];
+		for ( var i in dataList ) {
+			var tableName = dataList[i]['TABLE_NAME'];
+			var columnName = dataList[i]['COLUMN_NAME']
+			if ( tableMap[tableName] != undefined && tableMap[tableName] === columnName ) {
+				errorData.push(dataList[i]);
+			}
+			else {
+				tableMap[tableName] = columnName;
+			}
+		}
+		return errorData;
 	},
-	NULLCG : function (dataList) {
-		return dataObj.CG_ID === undefined || dataObj.CG_NAME === undefined;
+	DUPLICATE_COLUMNID : function (dataList) {
+		var tableMap = {};
+		var errorData = [];
+		for ( var i in dataList ) {
+			var tableName = dataList[i]['TABLE_NAME'];
+			var columnId = dataList[i]['COLUMN_ID']
+			if ( tableMap[tableName] != undefined && tableMap[tableName] === columnId ) {
+				errorData.push(dataList[i]);
+			}
+			else {
+				tableMap[tableName] = columnId;
+			}
+		}
+		return errorData;
 	},
-	NULLCOLUMNNAME : function (dataList) {
-		return dataObj.COLUMN_NAME === undefined;
-	},
+	MULTI_TABLECOMMENTS : function (dataList) {
+		var tableMap = {};
+		var errorData = [];
+		for ( var i in dataList ) {
+			var tableName = dataList[i]['TABLE_NAME'];
+			var tableComments = dataList[i]['TAB_COMMENTS']
+			if ( tableMap[tableName] === undefined ) {
+				tableMap[tableName] = tableComments;
+			}
+			else if ( tableMap[tableName] != tableComments ) {
+				errorData.push(dataList[i]);
+			}
+		}
+		return errorData;
+	}
 }
 //涉及到数据库查询的校验规则
 var dbTableCheckFun = {
-	NULLCOMMITTER : function (dataObj) {
-		return dataObj.MODI_USER === undefined;
-	},
-	NULLCG : function (dataObj) {
-		return dataObj.CG_ID === undefined || dataObj.CG_NAME === undefined;
-	},
-	NULLCOLUMNNAME : function (dataObj) {
-		return dataObj.COLUMN_NAME === undefined;
-	},
+	
 }
 
 
@@ -58,6 +86,13 @@ var templateCheckFuns = {
 					pArrayExcelData[i].INDEX = pArrayExcelData.indexOf(pArrayExcelData[i]);
 					errorResult[funcName].push(pArrayExcelData[i]);
 				}
+			}
+		}
+
+		for ( var funcName in multiTableCheckFun ) {
+			var errorData = multiTableCheckFun[funcName](pArrayExcelData);
+			if ( errorData.length > 0 ) {
+				errorResult[funcName] = errorData;
 			}
 		}
 		return errorResult;

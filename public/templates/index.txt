@@ -1,0 +1,125 @@
+----------------------校验部分-----------------------------
+--没有填写提交人
+select count(*) into t_count from 
+hexin_ind_template where COMMITTER is null;
+if t_count > 0 then
+  raise_application_error(-20002, '没有填写提交人!');
+end if;
+
+
+--索引对应的表不存在
+select count(*) into t_count from 
+hexin_ind_template where table_name not in (select table_name from hexin_template)
+and table_name not in (select table_name from hexin_mapping);
+if t_count > 0 then
+  raise_application_error(-20002, '索引对应的表不存在!');
+end if;
+
+--同样的表，同样的索引名，会覆盖原有的
+
+
+--字段列表格式不合法
+select count(*) into t_count from 
+hexin_ind_template where not regexp_like(index_columns,'([a-zA-Z0-9#_]+)( *, *[a-zA-Z0-9#_]+)*')
+and (is_delete != '1' or is_delete is null);
+if t_count > 0 then
+  raise_application_error(-20002, '字段列表格式不合法!');
+end if;
+
+
+--外部校验的语句
+--set serveroutput on;
+--declare
+--i number;
+--t_count number;
+--word varchar2(1000);
+--begin
+-- for cur in (select table_name, index_columns from hexin_ind_template ) loop
+-- dbms_output.put_line(cur.index_columns);
+--  i:=1;
+--  while (regexp_substr(trim(cur.index_columns),'[a-zA-Z0-9#_]+',1,i) is not null ) loop
+--    word:= regexp_substr(trim(cur.index_columns),'[a-zA-Z0-9#_]+',1,i);
+--
+--    select count(*) into t_count from hexin_variable_latest a where a.table_name = cur.table_name and A.column_NAME = word;
+--    if t_count = 0 then
+--      dbms_output.put_line(cur.table_name||' '||word||' '||t_count);
+--      raise_application_error(-20002, '索引中的字段不存在于已有的旧核心定义中!');
+--    end if;
+--    i:=i+1;  
+--  end loop;
+--end loop;
+--end;
+
+
+
+
+--主键中的字段不存在于已有的旧核心定义中
+for cur in (select table_name, index_columns, ordered_columns from hexin_ind_template where is_delete != '1' or is_delete is null ) loop
+--dbms_output.put_line(cur.index_columns);
+  i:=1;
+  while (regexp_substr(trim(cur.index_columns),'[a-zA-Z0-9#_]+',1,i) is not null ) loop --老核心的字段里面有井号#，所以要加进去 20160711
+    word:= regexp_substr(trim(cur.index_columns),'[a-zA-Z0-9#_]+',1,i);
+--  dbms_output.put_line(word);
+    select count(*) into t_count from hexin_variable_latest a where a.table_name = cur.table_name and A.column_NAME = word;
+--    select count(*) into t_count1 from hexin_variable_latest a where a.table_name = cur.table_name and A.EN_NAME_FINAL = word;
+    if t_count = 0 then
+      raise_application_error(-20002, '索引中的字段不存在于已有的旧核心定义中!');
+    end if;
+    i:=i+1;  
+  end loop;
+end loop;
+
+--索引重复定义
+select count(*) into t_count from (
+select table_name ,index_columns  from hexin_ind_template where (is_delete != '1' or is_delete is null)
+group by table_name ,index_columns having  count(distinct index_name) > 1);
+if t_count > 0 then
+  raise_application_error(-20002, '模板中的索引有重复,不同名的索引有相同的字段定义!');
+end if;
+
+--索引重复定义2
+select count(*) into t_count from hexin_ind_template a where exists 
+(select 1 from hexin_index_latest b 
+where a.table_name = b.table_name and a.index_columns = b.index_columns and a.index_name != b.index_name)
+and (is_delete != '1' or is_delete is null); 
+if t_count > 0 then
+  raise_application_error(-20002, '模板中的索引与已有索引中存在不同名但同字段的索引!');
+end if;
+
+--索引与主键重复
+select count(*) into t_count from hexin_ind_template a where exists 
+(select 1 from hexin_primarykey_latest b 
+where a.table_name = b.table_name and a.ordered_columns = b.pk_columns)
+and (is_delete != '1' or is_delete is null); 
+if t_count > 0 then
+  raise_application_error(-20002, '模板中的索引与已有主键具有相同字段!');
+end if;
+select count(*) into t_count from hexin_ind_template a where exists 
+(select 1 from hexin_primarykey_latest b 
+where a.table_name = b.table_name and a.index_columns = b.pk_columns)
+and (is_delete != '1' or is_delete is null); 
+if t_count > 0 then
+  raise_application_error(-20002, '模板中的索引与已有主键具有相同字段!');
+end if;
+
+select count(*) into t_count from (
+select index_name from hexin_ind_template where (is_delete != '1' or is_delete is null)
+group by index_name having count(distinct table_name) > 1);
+if t_count > 0 then
+  raise_application_error(-20002, '模板中的不同的表存在同名索引!');
+end if;
+
+--索引重复定义3
+select count(*) into t_count from (
+select table_name ,index_name  from hexin_ind_template where (is_delete != '1' or is_delete is null)
+group by table_name ,index_name having  count(1) > 1);
+if t_count > 0 then
+  raise_application_error(-20002, '模板中的相同的表存在同名索引!');
+end if;
+
+select count(*) into t_count 
+from hexin_ind_template a where exists(select 1 from hexin_index_latest b where a.table_name != b.table_name and a.index_name = b.index_name)
+and (is_delete != '1' or is_delete is null);
+if t_count > 0 then
+  raise_application_error(-20002, '已有的索引定义中存在不同表的同名索引!');
+end if;

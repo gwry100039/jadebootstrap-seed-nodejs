@@ -1,0 +1,78 @@
+--没有填写提交人
+select count(*) into t_count from 
+hexin_pk_template where COMMITTER is null;
+if t_count > 0 then
+  raise_application_error(-20002, '没有填写提交人!');
+end if;
+
+
+--主键对应的表不存在
+select count(*) into t_count from 
+hexin_pk_template where table_name not in (select table_name from hexin_template)
+and table_name not in (select table_name from hexin_mapping);
+if t_count > 0 then
+  raise_application_error(-20002, '主键对应的表不存在!');
+end if;
+
+--同样的表已经定义过主键，会覆盖旧的主键定义
+
+
+--字段列表格式不合法
+select count(*) into t_count from 
+hexin_pk_template where not regexp_like(pk_columns,'([a-zA-Z0-9#_]+)( *, *[a-zA-Z0-9#_]+)*')
+and is_delete != '1';
+if t_count > 0 then
+  raise_application_error(-20002, '字段列表格式不合法!');
+end if;
+
+--索引与主键重复
+select count(*) into t_count from hexin_pk_template b where exists 
+(select 1 from hexin_index_latest a 
+where a.table_name = b.table_name and a.index_columns = b.pk_columns)
+and (is_delete != '1' or is_delete is null); 
+if t_count > 0 then
+  raise_application_error(-20002, '模板中的主键与已有索引具有相同字段!');
+end if;
+
+
+--外部校验的语句
+--set serveroutput on;
+--declare
+--i number;
+--t_count number;
+--word varchar2(1000);
+--begin
+-- for cur in (select table_name, pk_columns from HEXIN_PK_TEMPLATE ) loop
+-- dbms_output.put_line(cur.pk_columns);
+--  i:=1;
+--  while (regexp_substr(trim(cur.pk_columns),'[a-zA-Z0-9#_]+',1,i) is not null ) loop
+--    word:= regexp_substr(trim(cur.pk_columns),'[a-zA-Z0-9#_]+',1,i);
+--
+--    select count(*) into t_count from hexin_variable_latest a where a.table_name = cur.table_name and A.column_NAME = word;
+--    if t_count = 0 then
+--      dbms_output.put_line(cur.table_name||' '||word||' '||t_count);
+--      raise_application_error(-20002, '主键中的字段不存在于已有的旧核心定义中!');
+--    end if;
+--    i:=i+1;  
+--  end loop;
+--end loop;
+--end;
+
+
+
+
+--主键中的字段不存在于已有的旧核心定义中
+for cur in (select table_name, pk_columns from HEXIN_PK_TEMPLATE where (is_delete != '1' or is_delete is null) ) loop
+dbms_output.put_line(cur.pk_columns);
+  i:=1;
+  while (regexp_substr(trim(cur.pk_columns),'[a-zA-Z0-9#_]+',1,i) is not null ) loop --老核心的字段里面有井号#，所以要加进去 20160711
+    word:= regexp_substr(trim(cur.pk_columns),'[a-zA-Z0-9#_]+',1,i);
+  dbms_output.put_line(word);
+    select count(*) into t_count from hexin_variable_latest a where a.table_name = cur.table_name and A.column_NAME = word;
+--    select count(*) into t_count1 from hexin_variable_latest a where a.table_name = cur.table_name and A.EN_NAME_FINAL = word;
+    if t_count = 0 then
+      raise_application_error(-20002, '主键中的字段不存在于已有的旧核心定义中!');
+    end if;
+    i:=i+1;  
+  end loop;
+end loop;

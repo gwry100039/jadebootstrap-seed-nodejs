@@ -5,9 +5,9 @@ append body
 	.container
 		+panel-info("新核心元数据提交窗口")
 			+dropdown("下载填报模板",[
-				{text:"表结构",url:"/templates/test.xlsx"},
-			 	{text:"主键",url:"/templates/test.xlsx"},
-			 	{text:"索引",url:"/templates/test.xlsx"}
+				{text:"表结构",url:"/templates/HEXIN_TEMPLATE.xlsx"},
+			 	{text:"主键",url:"/templates/HEXIN_PK_TEMPLATE.xlsx"},
+			 	{text:"索引",url:"/templates/HEXIN_INDEX_TEMPLATE.xlsx"}
 			])
 			form(enctype="multipart/form-data",action="/templates/upload",method="post")#uploadexcel
 				+input-group("表结构模板","")

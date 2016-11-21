@@ -1,0 +1,128 @@
+----------------------校验部分-----------------------------
+
+--没有填写提交人
+select count(*) into t_count from 
+hexin_template where modi_user is null;
+if t_count > 0 then
+  raise_application_error(-20002, '没有填写提交人!');
+end if;
+
+--提交人表内不唯一
+select count(*) into t_count from 
+(select table_name from hexin_template group by table_name  having count(distinct modi_user) > 1 );
+if t_count > 0 then 
+  raise_application_error(-20002, '提交人表内不唯一!');
+end if;
+
+--提交人错误
+--select count(*) into t_count from hexin_template where modi_user in ('0014031','0013036','0008032');
+--if t_count > 0 then 
+--  raise_application_error(-20002, '提交人错误!');
+--end if;
+
+--column_id 重复
+select count(*) into t_count from 
+(SELECT TABLE_NAME,COLUMN_ID FROM HEXIN_TEMPLATE GROUP BY TABLE_NAME,COLUMN_ID HAVING COUNT(1)>1);
+if t_count > 0 then
+  raise_application_error(-20002, 'column_id 重复!');
+end if;
+
+--column_name 重复
+select count(*) into t_count from 
+(SELECT TABLE_NAME,column_name FROM HEXIN_TEMPLATE GROUP BY TABLE_NAME,column_name HAVING COUNT(1)>1);
+if t_count > 0 then
+  raise_application_error(-20002, 'column_name 重复!');
+end if;
+
+--column_name为空
+select count(*) into t_count from HEXIN_TEMPLATE where column_name is null;
+if t_count > 0 then
+  raise_application_error(-20002, 'column_name 为空!');
+end if;
+
+--词根为空
+select count(*) into t_count from 
+(select * from hexin_template where cg_id is null or cg_name is null);
+if t_count > 0 then
+  raise_application_error(-20002, '词根为空!');
+end if;
+
+--词根不存在
+select count(*) into t_count from 
+(select * from hexin_template where cg_id not in (select uni_id from hexin_domain_view)
+);
+if t_count > 0 then
+  raise_application_error(-20002, '词根不存在!');
+end if;
+
+--分词与词根不匹配
+select count(*) into t_count from 
+(select * from hexin_template where 
+cg_id is not null and 
+(
+(c1_id != cg_id or c1_id is null ) and
+(c2_id != cg_id or c2_id is null ) and
+(c3_id != cg_id or c3_id is null ) and
+(c4_id != cg_id or c4_id is null ) and
+(c5_id != cg_id or c5_id is null ) and
+(c6_id != cg_id or c6_id is null )
+));
+if t_count > 0 then
+  raise_application_error(-20002, '分词与词根不匹配!');
+end if;
+
+--词汇id不在表HEXIN_WORD_SYNONYM中
+select count(*) into t_count from 
+(select * from hexin_template where 
+cg_id is not null and 
+(
+(c1_id not in (select uni_id from HEXIN_WORD_SYNONYM) ) or
+(c2_id not in (select uni_id from HEXIN_WORD_SYNONYM) ) or
+(c3_id not in (select uni_id from HEXIN_WORD_SYNONYM) ) or
+(c4_id not in (select uni_id from HEXIN_WORD_SYNONYM) ) or
+(c5_id not in (select uni_id from HEXIN_WORD_SYNONYM) ) or
+(c6_id not in (select uni_id from HEXIN_WORD_SYNONYM) )
+));
+if t_count > 0 then
+  raise_application_error(-20002, '词汇id不在表HEXIN_WORD_SYNONYM中!');
+end if;
+
+--分词组合不在dict规定的范围内
+/*
+select count(*) into t_count from 
+hexin_template where c1_id||c2_id||c3_id||c4_id||c5_id||c6_id  not in (select uni_id_f from hexin_dict_f);
+if t_count > 0 then
+  raise_application_error(-20002, '分词组合不在dict_f规定的范围内!');
+end if;
+*/
+
+--表名与表描述不唯一
+select count(*) into t_count from 
+(select table_name from (select table_name,tab_comments from hexin_template group by table_name,tab_comments) group by table_name having count(*) > 1 );
+if t_count > 0 then
+  raise_application_error(-20002, '表名与表描述不唯一!');
+end if;
+
+select count(*) into t_count from hexin_template
+where table_name not in (select table_name from hexin_group_latest);
+if t_count > 0 then
+  raise_application_error(-20002, '新增的表名不在hexin_group中，需要手工添加hexin_group数据!');
+end if;
+
+select count(*) into t_count from hexin_template
+where table_name  in (select table_name from hexin_group where t_desc like '%废%' and (TABLE_NAME,MODI_DATE) IN (SELECT TABLE_NAME,MAX(MODI_DATE) FROM HEXIN_GROUP GROUP BY TABLE_NAME) );
+if t_count > 0 then
+  raise_application_error(-20002, '提交的模板中存在作废的表!');
+end if;
+
+
+SELECT count(*) into t_count FROM hexin_template
+WHERE c1_name is not null and nvl(C1_ID,' ')<>(SELECT UNI_ID FROM HEXIN_WORD_VIEW T WHERE T.CN_NAME=C1_NAME)
+OR c2_name is not null and nvl(C2_ID,' ')<>(SELECT UNI_ID FROM HEXIN_WORD_VIEW T WHERE T.CN_NAME=C2_NAME)
+OR c3_name is not null and nvl(C3_ID,' ')<>(SELECT UNI_ID FROM HEXIN_WORD_VIEW T WHERE T.CN_NAME=C3_NAME)
+OR c4_name is not null and nvl(C4_ID,' ')<>(SELECT UNI_ID FROM HEXIN_WORD_VIEW T WHERE T.CN_NAME=C4_NAME)
+OR c5_name is not null and nvl(C5_ID,' ')<>(SELECT UNI_ID FROM HEXIN_WORD_VIEW T WHERE T.CN_NAME=C5_NAME)
+OR c6_name is not null and nvl(C6_ID,' ')<>(SELECT UNI_ID FROM HEXIN_WORD_VIEW T WHERE T.CN_NAME=C6_NAME);
+if t_count > 0 then
+  raise_application_error(-20002, '分词ID与分词NAME不匹配!');
+end if;
