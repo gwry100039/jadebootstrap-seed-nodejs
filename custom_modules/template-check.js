@@ -1,10 +1,13 @@
 //单条记录校验规则
 var singleTableCheckFun = {
-	NULL_COMMITTER : function (dataObj) {
+	提交人为空 : function (dataObj) {
 		return dataObj.MODI_USER === undefined;
 	},
-	NULL_CG : function (dataObj) {
-		return dataObj.CG_ID === undefined || dataObj.CG_NAME === undefined;
+	NULL_CGID : function (dataObj) {
+		return dataObj.CG_ID === undefined ;
+	},
+	NULL_CGNAME : function (dataObj) {
+		return dataObj.CG_NAME === undefined;
 	},
 	NULL_COLUMNNAME : function (dataObj) {
 		return dataObj.COLUMN_NAME === undefined;
@@ -26,12 +29,16 @@ var multiTableCheckFun = {
 		var errorData = [];
 		for ( var i in dataList ) {
 			var tableName = dataList[i]['TABLE_NAME'];
-			var columnName = dataList[i]['COLUMN_NAME']
-			if ( tableMap[tableName] != undefined && tableMap[tableName] === columnName ) {
+			var columnName = dataList[i]['COLUMN_NAME'];
+			if ( tableMap[tableName] === undefined ) {
+				tableMap[tableName] = {};
+			} 
+			if ( tableMap[tableName][columnName] != undefined ) {
 				errorData.push(dataList[i]);
+				console.log(columnName,dataList[i]);
 			}
 			else {
-				tableMap[tableName] = columnName;
+				tableMap[tableName][columnName] = 1;
 			}
 		}
 		return errorData;
@@ -41,12 +48,16 @@ var multiTableCheckFun = {
 		var errorData = [];
 		for ( var i in dataList ) {
 			var tableName = dataList[i]['TABLE_NAME'];
-			var columnId = dataList[i]['COLUMN_ID']
-			if ( tableMap[tableName] != undefined && tableMap[tableName] === columnId ) {
+			var columnId = dataList[i]['COLUMN_ID'];
+			if ( tableMap[tableName] === undefined ) {
+				tableMap[tableName] = {};
+			} 
+			if ( tableMap[tableName][columnId] != undefined ) {
 				errorData.push(dataList[i]);
+				console.log(columnId,dataList[i])
 			}
 			else {
-				tableMap[tableName] = columnId;
+				tableMap[tableName][columnId] = 1;
 			}
 		}
 		return errorData;
@@ -83,14 +94,15 @@ var templateCheckFuns = {
 					if ( errorResult[funcName] === undefined ) {
 						errorResult[funcName] = [];
 					}
-					pArrayExcelData[i].INDEX = pArrayExcelData.indexOf(pArrayExcelData[i]);
 					errorResult[funcName].push(pArrayExcelData[i]);
 				}
 			}
+			pArrayExcelData[i].INDEX = pArrayExcelData.indexOf(pArrayExcelData[i]);
 		}
 
 		for ( var funcName in multiTableCheckFun ) {
 			var errorData = multiTableCheckFun[funcName](pArrayExcelData);
+			//console.log("ERRORDATA:",errorData);
 			if ( errorData.length > 0 ) {
 				errorResult[funcName] = errorData;
 			}

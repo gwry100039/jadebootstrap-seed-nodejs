@@ -1,0 +1,26 @@
+extends ./jade-bootstrap/_bootstrap
+append styles
+	link(href='/css/style.css', rel='stylesheet')
+append body
+	.container
+		+tab-list(["表结构提交结果","主键提交结果","索引提交结果"],0)
+			+tab("表结构提交结果","active")
+				+list-group-custom()
+					each results, key in errorResults
+						+list-group-item("#")
+							h4.list-group-item-heading= key
+							table.table.table-striped.table-bordered
+								thead
+									tr
+										th TABLE_NAME
+										th COLUMN_NAME
+										th COLUMN_ID
+								tbody
+									each result,index in results
+										tr
+											td= result.TABLE_NAME
+											td= result.COLUMN_NAME
+											td= result.COLUMN_ID
+			+tab("主键提交结果","active")
+			+tab("索引提交结果","active")
+		

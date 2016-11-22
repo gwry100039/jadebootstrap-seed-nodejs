@@ -98,8 +98,8 @@ app.post('/templates/upload', cpUpload, function (req, res, next) {
       var workbook = XLSX.readFile(tab.path);
       var name0 = workbook.SheetNames[0];
       var templateArrayData = XLSX.utils.sheet_to_json(workbook.Sheets[name0]);
-      var errorResult = templateCheck.checkTable(templateArrayData);
-      console.log(errorResult);
+      var errorResults = templateCheck.checkTable(templateArrayData);
+      console.log(errorResults);
     }
     
   }
@@ -123,7 +123,8 @@ app.post('/templates/upload', cpUpload, function (req, res, next) {
       console.log( workbook.SheetNames);
     }
   }
-  res.send(req.files);
+  //res.send(req.files);
+  res.render('submit-result', { errorResults: errorResults })
 })
 
 // catch 404 and forward to error handler
