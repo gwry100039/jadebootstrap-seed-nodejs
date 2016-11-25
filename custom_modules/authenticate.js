@@ -1,9 +1,15 @@
 var CASAuthentication = require('r-cas-authentication');
+var url = require('url')
 
-var cas = new CASAuthentication({
-    cas_url             : 'http://passport.oa.cqrcb.com/cas-oa',
+var cas_url = 'http://passport.oa.cqrcb.com/cas-oa';
+var service_url = 'http://10.181.136.243:3000/';
+
+exports = module.exports = {}
+
+exports.cas = new CASAuthentication({
+    cas_url             : cas_url,
     // cas_internal_url    : 'https://my-cas-host.service.com/cas',
-    service_url         : 'http://10.181.136.243:3000/',
+    service_url         : service_url,
     cas_port            : 80,
     cas_version         : 'saml1.1',
     renew               : false,
@@ -15,16 +21,15 @@ var cas = new CASAuthentication({
     destroy_session     : false
 });
 
-var authorize = function (req, res, next) {
-	if (!req.session.user_id) {
-		res.redirect('/login');
+exports.authorize = function (req, res, next) {
+	if (!req.session.cas_user) {
+		res.redirect('/');
 	}
 	else {
+        req.session.username = req.session.cas_user;
+        res.locals.username = req.session.username;
 		next();
 	}
 }
 
-module.exports = {
-	authorize : authorize,
-	cas : cas
-}
+exports.logout = exports.cas.logout

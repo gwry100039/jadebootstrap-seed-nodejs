@@ -10,3 +10,11 @@ a {
 .dropdown {
   margin-bottom: 13px;
 }
+
+.navbar-brand-thin {
+  float: left;
+  height: 40px;
+  padding: 9px 9px;
+  font-size: 18px;
+  line-height: 20px;
+}

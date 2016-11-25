@@ -34,7 +34,9 @@ app.use(session({
   saveUninitialized: true
 }));
 
-app.use('/', authenticate.cas.bounce, routes);
+app.use('*', authenticate.cas.bounce, authenticate.authorize);
+app.use('/', routes);
+app.use('/logout', authenticate.logout);
 app.use('/users', users);
 
 app.post('/templates/upload', handleUploads.cpUpload, handleUploads.uploadHandler);
