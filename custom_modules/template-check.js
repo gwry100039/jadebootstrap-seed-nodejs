@@ -100,7 +100,6 @@ var templateCheckFunc = function (type, pArrayExcelData) {
 	var errorResult = {};
 	for ( var i in pArrayExcelData ) {
 		var singleTableCheckFuncs = checkFunctions[type].singleCheckFuncs
-		console.log (singleTableCheckFuncs);
 		for ( var funcName in singleTableCheckFuncs ) {
 			// console.log(funcName,pArrayExcelData[i]);
 			if (singleTableCheckFuncs[funcName](pArrayExcelData[i])) {

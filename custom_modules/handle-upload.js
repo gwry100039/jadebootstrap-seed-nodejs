@@ -76,6 +76,21 @@ var uploadHandler = function (req, res, next) {
   // req.body will contain the text fields, if there were any
   var XLSX = require('xlsx');
 
+  var templateDir = 'public/templates/';
+  var templateMap = {
+    table : templateDir + 'HEXIN_TEMPLATE.xlsx',
+    primarykey : templateDir + 'HEXIN_PK_TEMPLATE.xlsx',
+    index : templateDir + 'HEXIN_INDEX_TEMPLATE.xlsx'
+  };
+
+  var parseRef = function (ref) {
+    var s = ref.split(':')[0];
+    var e = ref.split(':')[0];
+    return {s:s,e:e};
+  }
+
+  var errorResults = {};
+
   //对excel内容的校验，一部分校验需要连接数据库,校验函数见 template-check.js
   for ( var type in req.files ) {
     var fileArray = req.files[type];
@@ -83,16 +98,29 @@ var uploadHandler = function (req, res, next) {
       var fileMetaData = fileArray[i];
       console.log(fileMetaData);
       var workbook = XLSX.readFile(fileMetaData.path);
-      var name0 = workbook.SheetNames[0];
-      var templateArrayData = XLSX.utils.sheet_to_json(workbook.Sheets[name0]);
-      var errorResults = templateCheck(type, templateArrayData);
+      var sheet0 = workbook.Sheets[workbook.SheetNames[0]];
+      var range0 = parseRef(sheet0['!ref']);
       
-      if (errorResults) {
-        console.log(errorResults);
-        moveFile(fileMetaData.path,fileMetaData.destination+'failed/'+fileMetaData.filename);
+      var template = XLSX.readFile(templateMap[type]);
+      console.log(templateMap[type]);
+      // console.log(template);
+      var tsheet0 = template.Sheets[template.SheetNames[0]];
+      var trange0 = parseRef(tsheet0['!ref']);
+
+      if (range0.e === trang0.e && range0.s === trang0.s && range0.s === 'A1' ) {//校验列数是否符合模板
+        //设置提交人
+        var templateArrayData = XLSX.utils.sheet_to_json(workbook.Sheets[name0]);
+        errorResults[type] = templateCheck(type, templateArrayData);
+        
+        if (errorResults[type]) {
+          console.log(errorResults[type]);
+          moveFile(fileMetaData.path,fileMetaData.destination+'failed/'+fileMetaData.filename);
+        } else {
+          console.log(fileMetaData.filename + ' validate succeeded !');
+          moveFile(fileMetaData.path,fileMetaData.destination+'success/'+fileMetaData.filename);
+        }
       } else {
-        console.log(fileMetaData.filename + ' validate succeeded !');
-        moveFile(fileMetaData.path,fileMetaData.destination+'success/'+fileMetaData.filename);
+        errorResults[type] = { error : '模板格式有误，请下载并使用最新的模板' };
       }
     }
   }
