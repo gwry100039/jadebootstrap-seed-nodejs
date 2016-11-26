@@ -1,3 +1,4 @@
+var fs = require('fs');
 var templateCheck = require('./template-check');
 //file upload
 Date.prototype.Format = function (fmt) { //author: meizz 
@@ -16,6 +17,20 @@ Date.prototype.Format = function (fmt) { //author: meizz
     return fmt;
 };
 
+var moveFile = function (sourceFile, destFile) {
+  console.log('MOVE FILE :'+sourceFile+' '+destFile);
+  fs.access(destFile, (err) => {
+    if (!err) {
+      console.error('Dest File: ' + destFile + ' already exists, will overwrite it');
+      return;
+    }
+
+    fs.rename(sourceFile, destFile, function (err) {
+      if (err) {throw err;}
+    }); 
+  }); 
+}
+
 var multer  = require('multer') 
 var storage = multer.diskStorage({
      //设置上传后文件路径，uploads文件夹会自动创建。
@@ -25,17 +40,16 @@ var storage = multer.diskStorage({
      //给上传文件重命名，获取添加后缀名
     filename: function (req, file, cb) {
       var fileFormat = (file.originalname).split(".");
-      // TODO 获取请求人的员工号，考虑接入统一认证
-      console.log('filename session:'+req.session);
       var userName = req.session.username;
-      cb(null, file.fieldname + '-' + userName + '-' + (new Date()).Format('yyyyMMdd-hhmmss') + "." + fileFormat[fileFormat.length - 1]);
+      var uploadFileName = file.fieldname + '-' + userName + '-' + (new Date()).Format('yyyyMMdd-hhmmss') + "." + fileFormat[fileFormat.length - 1];
+      cb(null, uploadFileName);
     }
  });
 var filter = function fileFilter (req, file, cb) {
 
   var fileFormat = (file.originalname).split(".");
   var suffix = fileFormat[fileFormat.length - 1];
-  console.log('文件后缀名:'+suffix);
+  // console.log('文件后缀名:'+suffix);
   // cb(null, false)
   // To accept the file pass `true`, like so:
   if ( suffix != 'xlsx' )
@@ -60,44 +74,28 @@ var uploadHandler = function (req, res, next) {
   //  req.files['gallery'] -> Array
   //
   // req.body will contain the text fields, if there were any
-  console.log (req.files);
   var XLSX = require('xlsx');
 
-  //TODO 对excel内容的校验，一部分校验需要连接数据库
-  if(req.files['table']) {
-    var tableArray = req.files['table'];
-    for ( var i in tableArray ) {
-      var tab = tableArray[i];
-      console.log(tab);
-      var workbook = XLSX.readFile(tab.path);
+  //对excel内容的校验，一部分校验需要连接数据库,校验函数见 template-check.js
+  for ( var type in req.files ) {
+    var fileArray = req.files[type];
+    for ( var i in fileArray ) {
+      var fileMetaData = fileArray[i];
+      console.log(fileMetaData);
+      var workbook = XLSX.readFile(fileMetaData.path);
       var name0 = workbook.SheetNames[0];
       var templateArrayData = XLSX.utils.sheet_to_json(workbook.Sheets[name0]);
-      var errorResults = templateCheck.checkTable(templateArrayData);
-      console.log(errorResults);
-    }
-    
-  }
-
-  if(req.files['primarykey']) {
-    var tableArray = req.files['primarykey'];
-    for ( var i in tableArray ) {
-      var tab = tableArray[i];
-      console.log(tab);
-      var workbook = XLSX.readFile(tab.path);
-      console.log( workbook.SheetNames);
+      var errorResults = templateCheck(type, templateArrayData);
+      
+      if (errorResults) {
+        console.log(errorResults);
+        moveFile(fileMetaData.path,fileMetaData.destination+'failed/'+fileMetaData.filename);
+      } else {
+        console.log(fileMetaData.filename + ' validate succeeded !');
+        moveFile(fileMetaData.path,fileMetaData.destination+'success/'+fileMetaData.filename);
+      }
     }
   }
-
-  if(req.files['index']) {
-    var tableArray = req.files['index'];
-    for ( var i in tableArray ) {
-      var tab = tableArray[i];
-      console.log(tab);
-      var workbook = XLSX.readFile(tab.path);
-      console.log( workbook.SheetNames);
-    }
-  }
-  //res.send(req.files);
   res.render('submit-result', { errorResults: errorResults })
 }
 

@@ -1,6 +1,4 @@
-extends ./jade-bootstrap/_bootstrap
-append styles
-	link(href='/css/style.css', rel='stylesheet')
+extends ./header
 append body
 	.container
 		+tab-list(["表结构提交结果","主键提交结果","索引提交结果"],0)
