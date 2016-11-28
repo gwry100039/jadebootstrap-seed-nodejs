@@ -3,60 +3,68 @@ append body
 	.container
 		+tab-list(["表结构提交结果","主键提交结果","索引提交结果"],0)
 			+tab("表结构提交结果","active")
-				if errorResults.table.error
-					+alert-danger("This is a danger alert")
-				else
-					+list-group-custom()
-						each results, key in errorResults.table
-							+list-group-item("#")
-								div(style="margin:0").alert.alert-dismissible.alert-danger
-									b= key
-								table.table.table-striped.table-bordered
-									thead
-										tr
-											th TABLE_NAME
-											th COLUMN_NAME
-											th COLUMN_ID
-									tbody
-										each result,index in results
+				if errorResults.table
+					if errorResults.table.error
+						+alert-danger(errorResults.table.error)
+					else
+						+list-group-custom()
+							each results, key in errorResults.table
+								+list-group-item("#")
+									div(style="margin:0").alert.alert-dismissible.alert-danger
+										b= key
+									table.table.table-striped.table-bordered
+										thead
 											tr
-												td= result.TABLE_NAME
-												td= result.COLUMN_NAME
-												td= result.COLUMN_ID
+												th TABLE_NAME
+												th COLUMN_NAME
+												th COLUMN_ID
+										tbody
+											each result,index in results
+												tr
+													td= result.TABLE_NAME
+													td= result.COLUMN_NAME
+													td= result.COLUMN_ID
 			+tab("主键提交结果","active")
-				+list-group-custom()
-					each results, key in errorResults.primarykey
-						+list-group-item("#")
-							div(style="margin:0").alert.alert-dismissible.alert-danger
-								b= key
-							table.table.table-striped.table-bordered
-								thead
-									tr
-										th TABLE_NAME
-										th COLUMN_NAME
-										th COLUMN_ID
-								tbody
-									each result,index in results
-										tr
-											td= result.TABLE_NAME
-											td= result.COLUMN_NAME
-											td= result.COLUMN_ID
+				if errorResults.primarykey
+					if errorResults.primarykey.error
+						+alert-danger(errorResults.primarykey.error)
+					else
+						+list-group-custom()
+							each results, key in errorResults.primarykey
+								+list-group-item("#")
+									div(style="margin:0").alert.alert-dismissible.alert-danger
+										b= key
+									table.table.table-striped.table-bordered
+										thead
+											tr
+												th TABLE_NAME
+												th COLUMN_NAME
+												th COLUMN_ID
+										tbody
+											each result,index in results
+												tr
+													td= result.TABLE_NAME
+													td= result.COLUMN_NAME
+													td= result.COLUMN_ID
 			+tab("索引提交结果","active")
-				+list-group-custom()
-					each results, key in errorResults.index
-						+list-group-item("#")
-							div(style="margin:0").alert.alert-dismissible.alert-danger
-								b= key
-							table.table.table-striped.table-bordered
-								thead
-									tr
-										th TABLE_NAME
-										th COLUMN_NAME
-										th COLUMN_ID
-								tbody
-									each result,index in results
-										tr
-											td= result.TABLE_NAME
-											td= result.COLUMN_NAME
-											td= result.COLUMN_ID
-		
+				if errorResults.index
+					if errorResults.index.error
+						+alert-danger(errorResults.index.error)
+					else
+						+list-group-custom()
+							each results, key in errorResults.index
+								+list-group-item("#")
+									div(style="margin:0").alert.alert-dismissible.alert-danger
+										b= key
+									table.table.table-striped.table-bordered
+										thead
+											tr
+												th TABLE_NAME
+												th COLUMN_NAME
+												th COLUMN_ID
+										tbody
+											each result,index in results
+												tr
+													td= result.TABLE_NAME
+													td= result.COLUMN_NAME
+													td= result.COLUMN_ID		

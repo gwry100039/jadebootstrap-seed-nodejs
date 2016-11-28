@@ -85,8 +85,11 @@ var uploadHandler = function (req, res, next) {
 
   var parseRef = function (ref) {
     var s = ref.split(':')[0];
-    var e = ref.split(':')[0];
-    return {s:s,e:e};
+    var e = ref.split(':')[1];
+    return {
+      s : {c:s.search('[A-Z]+') , r:s.search('[0-9]+')} ,
+      e : {c:e.search('[A-Z]+') , r:e.search('[0-9]+')} 
+    };
   }
 
   var errorResults = {};
@@ -98,16 +101,19 @@ var uploadHandler = function (req, res, next) {
       var fileMetaData = fileArray[i];
       console.log(fileMetaData);
       var workbook = XLSX.readFile(fileMetaData.path);
-      var sheet0 = workbook.Sheets[workbook.SheetNames[0]];
+      var sheet0 = workbook.Sheets[workbook.SheetNames[0]];      
       var range0 = parseRef(sheet0['!ref']);
       
       var template = XLSX.readFile(templateMap[type]);
       console.log(templateMap[type]);
       // console.log(template);
       var tsheet0 = template.Sheets[template.SheetNames[0]];
+      console.log('ref:'+tsheet0['!ref']);
       var trange0 = parseRef(tsheet0['!ref']);
+      console.log(range0);
+      console.log(trange0);
 
-      if (range0.e === trang0.e && range0.s === trang0.s && range0.s === 'A1' ) {//校验列数是否符合模板
+      if (range0.e.c === trange0.e.c && range0.s.c === trange0.s.c && range0.s.c === 'A' ) {//校验列数是否符合模板
         //设置提交人
         var templateArrayData = XLSX.utils.sheet_to_json(workbook.Sheets[name0]);
         errorResults[type] = templateCheck(type, templateArrayData);
@@ -124,6 +130,7 @@ var uploadHandler = function (req, res, next) {
       }
     }
   }
+  console.log(errorResults);
   res.render('submit-result', { errorResults: errorResults })
 }
 
