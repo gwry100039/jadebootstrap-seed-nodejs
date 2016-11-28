@@ -87,9 +87,29 @@ var uploadHandler = function (req, res, next) {
     var s = ref.split(':')[0];
     var e = ref.split(':')[1];
     return {
-      s : {c:s.search('[A-Z]+') , r:s.search('[0-9]+')} ,
-      e : {c:e.search('[A-Z]+') , r:e.search('[0-9]+')} 
+      s : {c:/[A-Z]+/.exec(s)[0] , r:/[0-9]+/.exec(s)[0]} ,
+      e : {c:/[A-Z]+/.exec(e)[0] , r:/[0-9]+/.exec(e)[0]} 
     };
+  }
+
+  var setCommitter = function (sheet, committer) {
+    var range = parseRef(sheet['!ref']);
+    var col;
+    for ( var i = range.s.c.charCodeAt(0) ; i <= range.e.c.charCodeAt(0)  ; i++) {
+      var iadd = String.fromCharCode(i)+'1';
+      if ( sheet[iadd].v === 'COMMITTER' || sheet[iadd].v === 'MODI_USER' ) {
+        col = String.fromCharCode(i);
+      }
+    }
+    for ( var i = 2 ; i <= range.e.r ; i++) {
+      var address = col+new String(i);
+      // console.log('address:'+address);
+      // console.log(sheet[address]);
+      sheet[address] = {
+        t : 's',
+        v : committer
+      }
+    }
   }
 
   var errorResults = {};
@@ -114,23 +134,33 @@ var uploadHandler = function (req, res, next) {
       console.log(trange0);
 
       if (range0.e.c === trange0.e.c && range0.s.c === trange0.s.c && range0.s.c === 'A' ) {//校验列数是否符合模板
+        
+        console.log(XLSX.utils.sheet_to_json(sheet0));
+
         //设置提交人
-        var templateArrayData = XLSX.utils.sheet_to_json(workbook.Sheets[name0]);
+        setCommitter(sheet0, req.session.username);
+        
+        var templateArrayData = XLSX.utils.sheet_to_json(sheet0);
+        console.log(templateArrayData);
+
+        //获取校验结果集
         errorResults[type] = templateCheck(type, templateArrayData);
         
         if (errorResults[type]) {
-          console.log(errorResults[type]);
-          moveFile(fileMetaData.path,fileMetaData.destination+'failed/'+fileMetaData.filename);
+          //console.log(errorResults[type]);
+          // moveFile(fileMetaData.path,fileMetaData.destination+'failed/'+fileMetaData.filename);
+          XLSX.writeFile(workbook, fileMetaData.destination+'failed/'+fileMetaData.filename);
         } else {
           console.log(fileMetaData.filename + ' validate succeeded !');
-          moveFile(fileMetaData.path,fileMetaData.destination+'success/'+fileMetaData.filename);
+          // moveFile(fileMetaData.path,fileMetaData.destination+'success/'+fileMetaData.filename);
+          XLSX.writeFile(workbook, fileMetaData.destination+'success/'+fileMetaData.filename);
         }
       } else {
         errorResults[type] = { error : '模板格式有误，请下载并使用最新的模板' };
       }
     }
   }
-  console.log(errorResults);
+  // console.log(errorResults);
   res.render('submit-result', { errorResults: errorResults })
 }
 
