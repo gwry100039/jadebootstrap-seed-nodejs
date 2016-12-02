@@ -26,3 +26,7 @@ a {
 .panel-body {
   padding: 0;
 }
+
+.list-group {
+    margin-bottom: 0;
+}
